@@ -1,16 +1,115 @@
 [
   {
     "id": 1,
-    "priority": 1,
+    "priority": 3,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "||doubleclick.net^",
-      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest"]
+      "regexFilter": "^https://.*\\.googlevideo\\.com/videoplayback\\?.*[&?]dur=[0-9]+\\.[0-9]+.*$",
+      "resourceTypes": ["media"]
     }
   },
   {
     "id": 2,
-    "priority": 1,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*googlevideo.com/videoplayback*&dur=*",
+      "resourceTypes": ["media", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*googlevideo.com*&ctier=L*",
+      "resourceTypes": ["media"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*googlevideo.com*&ctier=A*",
+      "resourceTypes": ["media"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com/api/stats/ads*",
+      "resourceTypes": ["xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com/pagead/*",
+      "resourceTypes": ["script", "xmlhttprequest", "sub_frame"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com/ptracking*",
+      "resourceTypes": ["xmlhttprequest", "image", "ping"]
+    }
+  },
+  {
+    "id": 8,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com/api/stats/qoe*ad*",
+      "resourceTypes": ["xmlhttprequest", "ping"]
+    }
+  },
+  {
+    "id": 9,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com/get_midroll_info*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 10,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*youtube.com*adunit*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 3,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*googlevideo.com*oad=*",
+      "resourceTypes": ["media"]
+    }
+  },
+  {
+    "id": 12,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||doubleclick.net^",
+      "resourceTypes": ["script", "image", "sub_frame", "xmlhttprequest", "media"]
+    }
+  },
+  {
+    "id": 13,
+    "priority": 2,
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "||googleadservices.com^",
@@ -18,8 +117,8 @@
     }
   },
   {
-    "id": 3,
-    "priority": 1,
+    "id": 14,
+    "priority": 2,
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "||googlesyndication.com^",
@@ -27,8 +126,8 @@
     }
   },
   {
-    "id": 4,
-    "priority": 1,
+    "id": 15,
+    "priority": 2,
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "||google-analytics.com^",
@@ -36,8 +135,17 @@
     }
   },
   {
-    "id": 5,
-    "priority": 1,
+    "id": 16,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||static.doubleclick.net^",
+      "resourceTypes": ["script", "image", "sub_frame"]
+    }
+  },
+  {
+    "id": 17,
+    "priority": 2,
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "adservice.google.com",
@@ -45,8 +153,8 @@
     }
   },
   {
-    "id": 6,
-    "priority": 1,
+    "id": 18,
+    "priority": 2,
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "pagead2.googlesyndication.com",
@@ -54,7 +162,7 @@
     }
   },
   {
-    "id": 7,
+    "id": 19,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -63,7 +171,7 @@
     }
   },
   {
-    "id": 8,
+    "id": 20,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -72,7 +180,7 @@
     }
   },
   {
-    "id": 9,
+    "id": 21,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -81,7 +189,7 @@
     }
   },
   {
-    "id": 10,
+    "id": 22,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -90,7 +198,7 @@
     }
   },
   {
-    "id": 11,
+    "id": 23,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -99,7 +207,7 @@
     }
   },
   {
-    "id": 12,
+    "id": 24,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -108,7 +216,7 @@
     }
   },
   {
-    "id": 13,
+    "id": 25,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -117,7 +225,7 @@
     }
   },
   {
-    "id": 14,
+    "id": 26,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -126,7 +234,7 @@
     }
   },
   {
-    "id": 15,
+    "id": 27,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -135,7 +243,7 @@
     }
   },
   {
-    "id": 16,
+    "id": 28,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -144,7 +252,7 @@
     }
   },
   {
-    "id": 17,
+    "id": 29,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -153,7 +261,7 @@
     }
   },
   {
-    "id": 18,
+    "id": 30,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -162,7 +270,7 @@
     }
   },
   {
-    "id": 19,
+    "id": 31,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
@@ -171,7 +279,7 @@
     }
   },
   {
-    "id": 20,
+    "id": 32,
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
