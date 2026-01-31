@@ -197,6 +197,7 @@
 
 
 
+// YouTube Ad Blocker - Proper playback speed handling
 (function() {
   'use strict';
 
