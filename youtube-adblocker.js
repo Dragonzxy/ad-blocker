@@ -197,7 +197,6 @@
 
 
 
-// YouTube Ad Blocker - Proper playback speed handling
 (function() {
   'use strict';
 
@@ -205,7 +204,6 @@
   let userPlaybackRate = 1;
   let lastNormalSpeed = 1;
 
-  // Block ad requests
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     const url = args[0];
@@ -231,16 +229,13 @@
     return originalOpen.apply(this, arguments);
   };
 
-  // Fix YouTube's saved playback rate
   function fixYouTubePlaybackRate() {
     try {
-      // YouTube stores playback rate in localStorage
       const ytPlayerConfig = localStorage.getItem('yt-player-playback-rate');
       
       if (ytPlayerConfig) {
         const config = JSON.parse(ytPlayerConfig);
         
-        // If saved speed is below 1, reset it to 1
         if (config.data && parseFloat(config.data) < 1) {
           config.data = "1";
           localStorage.setItem('yt-player-playback-rate', JSON.stringify(config));
@@ -248,11 +243,9 @@
         }
       }
     } catch (e) {
-      // Silently fail if localStorage access fails
     }
   }
 
-  // Monitor user playback speed changes
   function monitorPlaybackSpeed() {
     const video = document.querySelector('video');
     const player = document.querySelector('.html5-video-player');
@@ -262,12 +255,10 @@
     if (!isProcessingAd && video.playbackRate !== userPlaybackRate) {
       userPlaybackRate = video.playbackRate;
       
-      // Remember last normal speed
       if (video.playbackRate >= 1) {
         lastNormalSpeed = video.playbackRate;
       }
       
-      // If user sets speed below 1, update YouTube's localStorage to prevent persistence
       if (video.playbackRate < 1) {
         try {
           const config = {
@@ -283,7 +274,6 @@
     }
   }
 
-  // Speed up ads
   function handleAd() {
     const video = document.querySelector('video');
     const player = document.querySelector('.html5-video-player');
@@ -308,7 +298,6 @@
       if (isProcessingAd) {
         isProcessingAd = false;
         
-        // Always restore to normal speed after ad
         const restoreSpeed = userPlaybackRate < 1 ? lastNormalSpeed : userPlaybackRate;
         video.playbackRate = restoreSpeed;
         userPlaybackRate = restoreSpeed;
@@ -319,7 +308,6 @@
     }
   }
 
-  // Remove ad overlays
   function removeAdElements() {
     const adSelectors = [
       '.ytp-ad-overlay-container',
@@ -346,7 +334,6 @@
     });
   }
 
-  // Click skip button
   function clickSkipButton() {
     if (!isProcessingAd) return;
 
@@ -375,13 +362,10 @@
     }
   }
 
-  // Update YouTube's UI to show correct playback rate
   function updatePlaybackRateUI(rate) {
     try {
-      // Find the playback rate menu button and update its text
       const rateButton = document.querySelector('.ytp-settings-button');
       if (rateButton) {
-        // Trigger YouTube to update its UI
         const video = document.querySelector('video');
         if (video) {
           video.playbackRate = rate;
@@ -390,7 +374,6 @@
     } catch (e) {}
   }
 
-  // Main observer
   function observePlayer() {
     const player = document.querySelector('.html5-video-player');
     if (!player) {
@@ -425,12 +408,9 @@
     });
   }
 
-  // Initialize
   function init() {
-    // Fix YouTube's saved playback rate on page load
     fixYouTubePlaybackRate();
     
-    // Set video to normal speed
     const video = document.querySelector('video');
     if (video) {
       video.playbackRate = 1;
@@ -454,7 +434,6 @@
     observePlayer();
   }
 
-  // Run on navigation (when clicking to new video)
   let lastUrl = location.href;
   new MutationObserver(() => {
     const url = location.href;
@@ -472,7 +451,6 @@
     }
   }).observe(document, { subtree: true, childList: true });
 
-  // Main interval
   setInterval(() => {
     monitorPlaybackSpeed();
     handleAd();
@@ -481,10 +459,8 @@
     }
   }, 100);
 
-  // Periodic cleanup
   setInterval(removeAdElements, 3000);
 
-  // CSS
   const style = document.createElement('style');
   style.textContent = `
     .ytp-ad-overlay-container,

@@ -81,7 +81,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     });
     console.log('✓ Static ruleset enabled');
 
-    // More aggressive dynamic rules
     const dynamicRules = [
       {
         "id": 1000,
@@ -150,7 +149,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     console.log('✓ Dynamic rules added:', dynamicRules.length);
     
   } catch (err) {
-    console.error('❌ Error:', err);
+    console.error(' Error:', err);
   }
 });
 
@@ -170,13 +169,13 @@ chrome.storage.onChanged.addListener(async (changes) => {
       console.log('✓ Ad blocking disabled');
     }
   } catch (err) {
-    console.error('❌ Error toggling:', err);
+    console.error(' Error toggling:', err);
   }
 });
 
 if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
   chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((details) => {
-    console.log('🚫 BLOCKED:', details.request.url);
+    console.log(' BLOCKED:', details.request.url);
   });
 }
 

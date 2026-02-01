@@ -1,8 +1,6 @@
-// Generic ad blocker for non-YouTube sites
 (function() {
   'use strict';
 
-  // Don't run on YouTube (handled by youtube-adblocker.js)
   if (window.location.hostname.includes('youtube.com')) {
     return;
   }
@@ -31,17 +29,14 @@
     });
   }
 
-  // Run on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', removeAds);
   } else {
     removeAds();
   }
 
-  // Run periodically
   setInterval(removeAds, 2000);
 
-  // CSS to hide ads
   const style = document.createElement('style');
   style.textContent = `
     .adsbygoogle,
