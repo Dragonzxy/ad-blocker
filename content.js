@@ -1,6 +1,7 @@
 (function() {
   'use strict';
 
+  // Exit early for YouTube - handle it separately
   if (window.location.hostname.includes('youtube.com')) {
     return;
   }
@@ -22,11 +23,22 @@
       '[data-ad-rendered="true"]'
     ];
 
-    adSelectors.forEach(selector => {
-      try {
-        document.querySelectorAll(selector).forEach(el => el.remove());
-      } catch (e) {}
-    });
+    // Use requestIdleCallback for stealth
+    if (window.requestIdleCallback) {
+      requestIdleCallback(() => {
+        adSelectors.forEach(selector => {
+          try {
+            document.querySelectorAll(selector).forEach(el => el.remove());
+          } catch (e) {}
+        });
+      }, { timeout: 2000 });
+    } else {
+      adSelectors.forEach(selector => {
+        try {
+          document.querySelectorAll(selector).forEach(el => el.remove());
+        } catch (e) {}
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -35,15 +47,18 @@
     removeAds();
   }
 
-  setInterval(removeAds, 2000);
+  // Increase interval to 5s instead of 2s - less detectable
+  setInterval(removeAds, 5000);
 
   const style = document.createElement('style');
+  style.type = 'text/css';
   style.textContent = `
     .adsbygoogle,
     [data-ad-rendered="true"],
     .advertisement,
     .sponsored {
       display: none !important;
+      visibility: hidden !important;
     }
   `;
   document.head.appendChild(style);

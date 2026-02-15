@@ -203,46 +203,33 @@
   let isProcessingAd = false;
   let userPlaybackRate = 1;
   let lastNormalSpeed = 1;
+  let originalPlaybackRateDescriptor = null;
 
-  const originalFetch = window.fetch;
-  window.fetch = function(...args) {
-    const url = args[0];
-    if (typeof url === 'string' && (
-      url.includes('/api/stats/ads') ||
-      url.includes('/pagead/') ||
-      url.includes('/get_midroll_info') ||
-      url.includes('doubleclick.net') ||
-      url.includes('googlesyndication.com')
-    )) {
-      return Promise.reject(new Error('Ad blocked'));
+  // Intercept localStorage to prevent YouTube from detecting modifications
+  const originalSetItem = Storage.prototype.setItem;
+  const originalGetItem = Storage.prototype.getItem;
+  
+  Storage.prototype.setItem = function(key, value) {
+    if (key === 'yt-player-playback-rate' && isProcessingAd) {
+      return; // Silently block during ad processing
     }
-    return originalFetch.apply(this, args);
-  };
-
-  const originalOpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(method, url) {
-    if (url.includes('/api/stats/ads') ||
-        url.includes('/pagead/') ||
-        url.includes('/get_midroll_info')) {
-      return;
-    }
-    return originalOpen.apply(this, arguments);
+    return originalSetItem.apply(this, arguments);
   };
 
   function fixYouTubePlaybackRate() {
     try {
-      const ytPlayerConfig = localStorage.getItem('yt-player-playback-rate');
+      const ytPlayerConfig = originalGetItem.call(localStorage, 'yt-player-playback-rate');
       
       if (ytPlayerConfig) {
         const config = JSON.parse(ytPlayerConfig);
         
         if (config.data && parseFloat(config.data) < 1) {
           config.data = "1";
-          localStorage.setItem('yt-player-playback-rate', JSON.stringify(config));
-          console.log('Reset YouTube saved playback rate to 1x');
+          originalSetItem.call(localStorage, 'yt-player-playback-rate', JSON.stringify(config));
         }
       }
     } catch (e) {
+      // Silent fail
     }
   }
 
@@ -265,12 +252,9 @@
             data: lastNormalSpeed.toString(),
             creation: Date.now()
           };
-          localStorage.setItem('yt-player-playback-rate', JSON.stringify(config));
-          console.log('Prevented slow speed from being saved');
+          originalSetItem.call(localStorage, 'yt-player-playback-rate', JSON.stringify(config));
         } catch (e) {}
       }
-      
-      console.log('Current playback speed:', userPlaybackRate);
     }
   }
 
@@ -284,26 +268,56 @@
                         player.classList.contains('ad-interrupting');
 
     if (isAdPlaying) {
-      isProcessingAd = true;
-      video.playbackRate = 16;
-      video.muted = true;
-      
-      if (video.duration && video.duration > 0 && !isNaN(video.duration)) {
-        const skipTime = Math.max(video.duration - 0.5, 5);
-        if (video.currentTime < skipTime) {
-          video.currentTime = skipTime;
+      if (!isProcessingAd) {
+        isProcessingAd = true;
+        
+        // Store original descriptor if not already stored
+        if (!originalPlaybackRateDescriptor) {
+          originalPlaybackRateDescriptor = Object.getOwnPropertyDescriptor(
+            HTMLMediaElement.prototype, 
+            'playbackRate'
+          );
         }
+        
+        // Override playbackRate property to hide speed from YouTube
+        Object.defineProperty(video, 'playbackRate', {
+          get: function() { 
+            return userPlaybackRate; // Return normal speed to YouTube's detection
+          },
+          set: function(value) {
+            // Ignore YouTube trying to slow us down during ads
+            if (isProcessingAd && value < 1) {
+              return;
+            }
+            // Actually set the speed (5x during ads, normal otherwise)
+            if (originalPlaybackRateDescriptor && originalPlaybackRateDescriptor.set) {
+              originalPlaybackRateDescriptor.set.call(this, isProcessingAd ? 5 : value);
+            }
+          },
+          configurable: true
+        });
+        
+        // Set actual playback rate to 5x
+        if (originalPlaybackRateDescriptor && originalPlaybackRateDescriptor.set) {
+          originalPlaybackRateDescriptor.set.call(video, 5);
+        }
+        
+        video.muted = true;
       }
     } else {
       if (isProcessingAd) {
         isProcessingAd = false;
+        
+        // Restore normal playbackRate property
+        if (originalPlaybackRateDescriptor) {
+          Object.defineProperty(video, 'playbackRate', originalPlaybackRateDescriptor);
+        }
         
         const restoreSpeed = userPlaybackRate < 1 ? lastNormalSpeed : userPlaybackRate;
         video.playbackRate = restoreSpeed;
         userPlaybackRate = restoreSpeed;
         
         video.muted = false;
-        console.log('Restored speed:', restoreSpeed);
       }
     }
   }
@@ -329,13 +343,27 @@
       'ytd-action-companion-ad-renderer'
     ];
 
-    adSelectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => el.remove());
-    });
+    if (window.requestIdleCallback) {
+      requestIdleCallback(() => {
+        adSelectors.forEach(selector => {
+          document.querySelectorAll(selector).forEach(el => {
+            el.style.display = 'none';
+            el.remove();
+          });
+        });
+      }, { timeout: 1000 });
+    } else {
+      adSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          el.style.display = 'none';
+          el.remove();
+        });
+      });
+    }
   }
 
   function clickSkipButton() {
-    if (!isProcessingAd) return;
+    if (!isProcessingAd) return false;
 
     const skipSelectors = [
       '.ytp-ad-skip-button-modern',
@@ -346,32 +374,26 @@
     ];
 
     for (const selector of skipSelectors) {
-      const buttons = document.querySelectorAll(selector);
-      buttons.forEach(button => {
-        const isVisible = button.offsetParent !== null && 
-                         window.getComputedStyle(button).display !== 'none';
+      try {
+        const buttons = document.querySelectorAll(selector);
         
-        if (isVisible && !button.disabled) {
-          try {
+        for (const button of buttons) {
+          const computedStyle = window.getComputedStyle(button);
+          const isVisible = button.offsetParent !== null && 
+                           computedStyle.display !== 'none' &&
+                           computedStyle.visibility !== 'hidden';
+          
+          if (isVisible && !button.disabled) {
             button.click();
-            console.log('Skip button clicked');
-            return;
-          } catch (e) {}
+            return true;
+          }
         }
-      });
-    }
-  }
-
-  function updatePlaybackRateUI(rate) {
-    try {
-      const rateButton = document.querySelector('.ytp-settings-button');
-      if (rateButton) {
-        const video = document.querySelector('video');
-        if (video) {
-          video.playbackRate = rate;
-        }
+      } catch (e) {
+        // Silent fail
       }
-    } catch (e) {}
+    }
+    
+    return false;
   }
 
   function observePlayer() {
@@ -382,14 +404,21 @@
     }
 
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
+      let shouldCheck = false;
+      
+      for (const mutation of mutations) {
         if (mutation.attributeName === 'class') {
-          handleAd();
-          if (isProcessingAd) {
-            clickSkipButton();
-          }
+          shouldCheck = true;
+          break;
         }
-      });
+      }
+      
+      if (shouldCheck) {
+        handleAd();
+        if (isProcessingAd) {
+          clickSkipButton();
+        }
+      }
     });
 
     observer.observe(player, {
@@ -398,8 +427,10 @@
       subtree: false
     });
 
+    let debounceTimer;
     const bodyObserver = new MutationObserver(() => {
-      removeAdElements();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(removeAdElements, 500);
     });
 
     bodyObserver.observe(document.body, {
@@ -414,7 +445,6 @@
     const video = document.querySelector('video');
     if (video) {
       video.playbackRate = 1;
-      updatePlaybackRateUI(1);
     }
     
     handleAd();
@@ -434,34 +464,35 @@
     observePlayer();
   }
 
+  // Navigation detection (YouTube SPA)
   let lastUrl = location.href;
   new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
-      console.log('Navigation detected - resetting playback rate');
       setTimeout(() => {
         fixYouTubePlaybackRate();
         const video = document.querySelector('video');
         if (video && video.playbackRate < 1) {
           video.playbackRate = lastNormalSpeed;
-          updatePlaybackRateUI(lastNormalSpeed);
         }
       }, 500);
     }
   }).observe(document, { subtree: true, childList: true });
 
+  // Check every 150ms - balance between responsiveness and stealth
   setInterval(() => {
     monitorPlaybackSpeed();
     handleAd();
     if (isProcessingAd) {
       clickSkipButton();
     }
-  }, 100);
+  }, 150);
 
-  setInterval(removeAdElements, 3000);
+  setInterval(removeAdElements, 5000);
 
   const style = document.createElement('style');
+  style.type = 'text/css';
   style.textContent = `
     .ytp-ad-overlay-container,
     .ytp-ad-text-overlay,
@@ -481,6 +512,9 @@
     .ytd-compact-promoted-video-renderer,
     .ytd-promoted-video-renderer {
       display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
 
     .ytp-ad-badge,
@@ -488,7 +522,7 @@
       display: none !important;
     }
   `;
-  document.head.appendChild(style);
+  
+  (document.head || document.documentElement).appendChild(style);
 
-  console.log('YouTube Ad Blocker Active - Smart playback rate handling');
 })();
